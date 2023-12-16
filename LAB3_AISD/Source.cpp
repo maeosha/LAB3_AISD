@@ -69,3 +69,27 @@ stats shaker_sort(std::vector<int>::iterator& start, std::vector<int>::iterator&
 
 	return stats;
 }
+
+
+stats comb_sort(std::vector<int>::iterator& start, std::vector<int>::iterator& end, const size_t size) {
+	stats stats;
+	size_t step = size;
+	stats.comparison_count++;
+	while (step > 1) {
+		step = step / 1.247f;
+		auto  index = start;
+		auto end_elem = end - step;
+		for (; index < end - step + 1; index++) {
+			auto elem = *(index + step - 1);
+			stats.comparison_count++;
+			if (*index > *(index + step - 1)) {
+				auto tmp_elem = *(index + step - 1);
+				*(index + step - 1) = *index;
+				*index = tmp_elem;
+				stats.comparison_count += 3;
+				stats.copy_count++;
+			}
+		}
+	}
+	return stats;
+}
