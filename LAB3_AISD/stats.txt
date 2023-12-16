@@ -1,0 +1,8 @@
+(Array size, average comparison count) (Array size, average copy count)
+(1000, 171785) (1000, 20513)3
+(Array size, average comparison count) (Array size, average copy count)
+(1000, 2489435) (1000, 1244717)1
+(Array size, average comparison count) (Array size, average copy count)
+(1000, 4981316) (1000, 1245327)2
+(Array size, average comparison count) (Array size, average copy count)
+(1000, 171597) (1000, 20450)3
