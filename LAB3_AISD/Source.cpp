@@ -10,6 +10,12 @@ enum SortMethod {
 	enum_comb_sort = 3
 };
 
+enum ArrayType {
+	random_type = 1,
+	sorted_type = 2,
+	rsorted_type = 3
+};
+
 
 struct stats {
 	size_t comparison_count = 0;
@@ -20,7 +26,7 @@ struct stats {
 stats sort_by_inserts(std::vector<int>::iterator start, std::vector<int>::iterator end) {
 	stats stats;
 
-	for (auto border = start + 1; border < end; border++) {
+	for (auto border = start + 1; border < end; ++border) {
 		const int key = *border;
 		auto border_elem = border - 1;
 		while (border_elem >= start) {
@@ -45,7 +51,6 @@ stats sort_by_inserts(std::vector<int>::iterator start, std::vector<int>::iterat
 stats shaker_sort(std::vector<int>::iterator start, std::vector<int>::iterator end) {
 	stats stats;
 	bool swaped = 0;
-	stats.comparison_count++;
 	do {
 		swaped = 1;
 		auto index = start;
@@ -76,7 +81,7 @@ stats shaker_sort(std::vector<int>::iterator start, std::vector<int>::iterator e
 		}
 		start++;
 	} while (swaped == 0);
-
+	
 	return stats;
 }
 
@@ -84,14 +89,11 @@ stats shaker_sort(std::vector<int>::iterator start, std::vector<int>::iterator e
 stats comb_sort(std::vector<int>::iterator start, std::vector<int>::iterator end, const size_t size) {
 	stats stats;
 	size_t step = size;
-	stats.comparison_count++;
 	while (step > 1) {
 		step = step / 1.247f;
 		auto  index = start;
-		auto end_elem = start + step - 1;
 		for (; index < end - step + 1; index++) {
 			auto elem = *(index + step - 1);
-			stats.comparison_count++;
 			if (*index > *(index + step - 1)) {
 				auto tmp_elem = *(index + step - 1);
 				*(index + step - 1) = *index;
@@ -105,24 +107,37 @@ stats comb_sort(std::vector<int>::iterator start, std::vector<int>::iterator end
 }
 
 
-void average_stats(const size_t size, const int sort_method) {
-	size_t average_comparison_count;
-	size_t average_copy_count;
+stats get_average_stats(const size_t size, const int sort_method, const int array_type) {
 	stats sorted_stats;
-	std::ofstream fout("stats.txt", std::ios_base::app);
+	std::vector<int> sort_array;
 
-	fout << "(Array size, average comparison count) (Array size, average copy count)" << std::endl;
-
-	
-	for (size_t count = 0; count < 50; count++) {
+	for (size_t count = 0; count < 2; count++) {
 		stats tmp_stats;
-		std::vector<int> sort_array;
+		sort_array.clear();
 
-		for (size_t index = 0; index < size; index++) {
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_int_distribution<> dist(-1000, 1000);
-			sort_array.push_back(dist(gen));
+		switch (array_type) {
+		case random_type:
+			for (size_t index = 0; index < size; index++) {
+				std::random_device rd;
+				std::mt19937 gen(rd());
+				std::uniform_int_distribution<> dist(-1000, 1000);
+				sort_array.push_back(dist(gen));
+				
+			}
+			break;
+
+		case sorted_type:
+			for (size_t index = 0; index < size; index++) {
+				sort_array.push_back(index);
+			}
+			break;
+
+		case rsorted_type:
+			for (int index = size; index >= 0; index--) {
+				sort_array.push_back(index);
+			}
+			break;
+
 		}
 
 		auto start = sort_array.begin();
@@ -147,20 +162,60 @@ void average_stats(const size_t size, const int sort_method) {
 		sorted_stats.copy_count += tmp_stats.copy_count;
 	}
 	
-	average_comparison_count = sorted_stats.comparison_count / 10;
-	average_copy_count = sorted_stats.copy_count / 10;
+	sorted_stats.comparison_count /= 2;
+	sorted_stats.copy_count /= 2;
 
-	fout << "(" << size << ", " << average_comparison_count << ") ";
-	fout << "(" << size << ", " << average_copy_count << ")" << sort_method << std::endl;
-
-	fout.close();
-
-	std::cout << "completed!";
-
+	return sorted_stats;
 }
 
+void start_average_sort(const int sort_method) {
+	std::vector<stats> average_stats;
+	std::vector<size_t> size;
+
+
+	for (size_t tmp_size = 1; tmp_size <= 10; tmp_size++) {
+		average_stats.push_back(get_average_stats(tmp_size * 1000, sort_method, 3));
+		size.push_back(tmp_size);
+	}
+
+
+	for (size_t tmp_size = 25; tmp_size <= 24; tmp_size * 2) {
+		average_stats.push_back(get_average_stats(tmp_size * 1000, sort_method, 3));
+		size.push_back(tmp_size);
+	}
+
+
+	std::ofstream fout("stats.txt", std::ios_base::app);
+
+
+	switch (sort_method) {
+	case enum_sort_by_inserts:
+		fout << "Sort by inserts: " << std::endl;;
+		break;
+	case enum_shaker_sort:
+		fout << "Shaker sort: " << std::endl;;
+		break;
+	case enum_comb_sort: 
+		fout << "Comb sort: " << std::endl;;
+		break;
+	}
+
+	fout << "(Array size, average comparison count): " << std::endl;
+	for (auto index = 0; index < average_stats.size(); index++) {
+		fout << "(" << size[index] << ", " << average_stats[index].comparison_count << ")" << std::endl;
+	}
+
+	fout << std::endl;
+
+	fout << "(Array size, average copy count): " << std::endl;
+	for (auto index = 0; index < average_stats.size(); index++) {
+		fout << "(" << size[index] << ", " << average_stats[index].copy_count << ")" << std::endl;
+	}
+
+	fout.close();
+}
+
+
 int main() {
-	average_stats(1000, 1);
-	average_stats(1000, 2);
-	average_stats(1000, 3);
+	start_average_sort(3);
 }
